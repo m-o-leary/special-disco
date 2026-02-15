@@ -15,7 +15,7 @@ from doc_parsing.cli import (
 from doc_parsing.infrastructure import (
     AdapterRegistration,
     DoclingConfig,
-    DoclingPdfParserFactory,
+    LazyDoclingPdfParserFactory,
     MockConfig,
     MockPdfParserFactory,
     ParserRegistry,
@@ -28,7 +28,7 @@ def _registry() -> ParserRegistry:
         AdapterRegistration(
             name="docling",
             config_model=DoclingConfig,
-            factory=DoclingPdfParserFactory(),
+            factory=LazyDoclingPdfParserFactory(),
         )
     )
     registry.register_adapter(

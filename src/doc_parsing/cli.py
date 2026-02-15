@@ -23,7 +23,7 @@ from doc_parsing.domain import (
 from doc_parsing.infrastructure import (
     AdapterRegistration,
     DoclingConfig,
-    DoclingPdfParserFactory,
+    LazyDoclingPdfParserFactory,
     MockConfig,
     MockPdfParserFactory,
     ParserRegistry,
@@ -219,7 +219,7 @@ def parse_pdf(
         AdapterRegistration(
             name="docling",
             config_model=DoclingConfig,
-            factory=DoclingPdfParserFactory(),
+            factory=LazyDoclingPdfParserFactory(),
         )
     )
     registry.register_adapter(

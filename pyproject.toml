@@ -17,6 +17,10 @@ dependencies = [
 [project.scripts]
 doc-parse = "doc_parsing.cli:app"
 
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
 [dependency-groups]
 dev = [
     "prek>=0.3.3",
@@ -24,6 +28,9 @@ dev = [
     "ruff>=0.15.1",
     "ty>=0.0.17",
 ]
+
+[tool.uv]
+package = true
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

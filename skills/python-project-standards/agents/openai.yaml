@@ -1,4 +1,0 @@
-interface:
-  display_name: "Python Project Standards"
-  short_description: "Python standards: uv, lint, types, tests"
-  default_prompt: "Apply Python project standards using uv tooling, architecture-first tests, and preferred frameworks."

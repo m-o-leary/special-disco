@@ -8,3 +8,8 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Local docs and skills
+FDA-Circular-No.-2017-003.md
+lf-20260205-0155.md
+skills/

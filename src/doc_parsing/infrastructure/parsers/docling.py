@@ -11,6 +11,7 @@ from docling.datamodel.pipeline_options import (
 )
 from docling.document_converter import DocumentConverter, PdfFormatOption
 
+from doc_parsing.application.logging import get_logger
 from doc_parsing.domain import PdfParser, PdfParserConfig, PdfParserFactory
 
 from .docling_config import DoclingConfig
@@ -21,6 +22,8 @@ class DoclingPdfParser(PdfParser):
     config: DoclingConfig
 
     def parse(self, file_path: Path) -> str:
+        logger = get_logger(__name__, parser="docling")
+        logger.info("docling.parse.start", extra={"path": str(file_path)})
         pipeline_options = PdfPipelineOptions()
 
         if self.config.picture_description:
@@ -43,7 +46,9 @@ class DoclingPdfParser(PdfParser):
             }
         )
         document = converter.convert(file_path).document
-        return _document_to_markdown(document)
+        markdown = _document_to_markdown(document)
+        logger.info("docling.parse.complete", extra={"chars": len(markdown)})
+        return markdown
 
 
 class DoclingPdfParserFactory(PdfParserFactory):

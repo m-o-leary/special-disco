@@ -83,6 +83,20 @@ def test_set_overrides_top_level() -> None:
     assert cast(Any, updated).task_id == "task-9"
 
 
+def test_set_overrides_logging() -> None:
+    resolver = ConfigResolver(_registry())
+    raw = {"parser": {"kind": "fake"}, "input_path": "/tmp/a.pdf"}
+    config = resolver.parse(raw)
+
+    updated = resolver.apply_overrides(
+        config,
+        overrides=["logging.level=DEBUG"],
+    )
+
+    logging_cfg = cast(Any, updated).logging
+    assert logging_cfg.level == "DEBUG"
+
+
 def test_load_yaml_from_stdin(monkeypatch: pytest.MonkeyPatch) -> None:
     payload = """
 parser:

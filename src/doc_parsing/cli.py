@@ -13,6 +13,7 @@ from rich.panel import Panel
 
 from doc_parsing.application import ParsePdfToMarkdown, ParsePdfToMarkdownInput
 from doc_parsing.application.config_resolver import ConfigResolver
+from doc_parsing.application.logging import LoggingConfig, configure_logging
 from doc_parsing.domain import (
     DocumentId,
     PdfParserConfig,
@@ -31,6 +32,9 @@ SET_OPT = typer.Option(None, "--set")
 TASK_ID_OPT = typer.Option(None, "--task-id")
 DOCUMENT_ID_OPT = typer.Option(None, "--document-id")
 PDB_OPT = typer.Option(False, "--pdb", help="Drop into pdb on error")
+LOG_LEVEL_OPT = typer.Option(None, "--log-level")
+LOG_FORMAT_OPT = typer.Option(None, "--log-format")
+LOG_FILE_OPT = typer.Option(None, "--log-file")
 
 
 def _load_yaml_config(config: str | None) -> dict[str, Any] | None:
@@ -59,6 +63,9 @@ def parse_pdf(
     task_id: str | None = TASK_ID_OPT,
     document_id: str | None = DOCUMENT_ID_OPT,
     set_values: list[str] | None = SET_OPT,
+    log_level: str | None = LOG_LEVEL_OPT,
+    log_format: str | None = LOG_FORMAT_OPT,
+    log_file: Path | None = LOG_FILE_OPT,
     pdb_on_error: bool = PDB_OPT,
 ) -> None:
     """Parse a PDF into markdown using a configured parser."""
@@ -72,13 +79,20 @@ def parse_pdf(
     if raw_config is None:
         raw_config = {}
     if "parser" not in raw_config:
-        raw_config["parser"] = {"kind": "docling"}
+        raise ValueError("parser must be specified in raw config")
     if "input_path" not in raw_config:
         if input_path is None:
             raise ValueError("input_path is required (use --input or config)")
         raw_config["input_path"] = input_path
 
     config_model = resolver.parse(raw_config)
+    logging_overrides: dict[str, Any] = {}
+    if log_level is not None:
+        logging_overrides["level"] = log_level
+    if log_format is not None:
+        logging_overrides["format"] = log_format
+    if log_file is not None:
+        logging_overrides["file"] = log_file
     updated_config = resolver.apply_base_overrides(
         config_model,
         input_path=input_path,
@@ -86,12 +100,16 @@ def parse_pdf(
         task_id=task_id,
         document_id=document_id,
         parser_kind=parser,
+        logging_overrides=logging_overrides or None,
     )
     if set_values:
         updated_config = resolver.apply_overrides(
             updated_config,
             overrides=set_values,
         )
+
+    config_logging = cast(Any, updated_config).logging
+    configure_logging(LoggingConfig.model_validate(config_logging))
 
     parser_model = cast(Any, updated_config).parser
     parser_name = getattr(parser_model, "kind", None)

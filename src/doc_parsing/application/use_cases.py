@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from doc_parsing.application.logging import get_logger
 from doc_parsing.domain import (
     Document,
     DocumentContent,
@@ -43,11 +44,18 @@ class ParsePdfToMarkdown:
         self._parser_factory = parser_factory
 
     def execute(self, data: ParsePdfToMarkdownInput) -> ParsePdfToMarkdownResult:
+        logger = get_logger(
+            __name__,
+            task_id=data.task_id.value,
+            document_id=data.document_id.value,
+            parser_name=data.parser_config.name,
+        )
         parser = self._parser_factory.create(data.parser_config)
 
         if not data.file_path.exists():
             raise FileNotFoundError(str(data.file_path))
 
+        logger.info("parse.start", extra={"path": str(data.file_path)})
         task = ParsingTask(
             request=ParsingRequest(
                 task_id=data.task_id,
@@ -60,6 +68,7 @@ class ParsePdfToMarkdown:
         task.start()
 
         markdown = parser.parse(data.file_path)
+        logger.info("parse.complete", extra={"chars": len(markdown)})
         document = Document(
             document_id=data.document_id,
             source=task.request.source,

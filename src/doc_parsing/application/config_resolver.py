@@ -7,6 +7,7 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, create_model
 
+from doc_parsing.application.logging import LoggingConfig
 from doc_parsing.infrastructure.parsers.registry import ParserRegistry
 
 
@@ -17,6 +18,7 @@ class CliConfig:
     document_id: str
     input_path: Path
     output_path: Path | None
+    logging: LoggingConfig
 
 
 class ConfigResolver:
@@ -33,6 +35,7 @@ class ConfigResolver:
             document_id=(str, "doc-1"),
             input_path=(Path, ...),
             output_path=(Path | None, None),
+            logging=(LoggingConfig, LoggingConfig()),
         )
 
     def parse(self, raw_config: dict[str, Any]) -> BaseModel:
@@ -48,6 +51,7 @@ class ConfigResolver:
         task_id: str | None,
         document_id: str | None,
         parser_kind: str | None,
+        logging_overrides: dict[str, Any] | None = None,
     ) -> BaseModel:
         raw = model.model_dump()
         if input_path is not None:
@@ -60,6 +64,10 @@ class ConfigResolver:
             raw["document_id"] = document_id
         if parser_kind is not None:
             raw["parser"] = {"kind": parser_kind}
+        if logging_overrides:
+            logging_raw = dict(raw.get("logging", {}))
+            logging_raw.update(logging_overrides)
+            raw["logging"] = logging_raw
         return type(model).model_validate(raw)
 
     def apply_overrides(self, model: BaseModel, *, overrides: list[str]) -> BaseModel:
@@ -72,6 +80,10 @@ class ConfigResolver:
                 parser_raw = dict(raw.get("parser", {}))
                 parser_raw[key.removeprefix("parser.")] = value
                 raw["parser"] = parser_raw
+            elif key.startswith("logging."):
+                logging_raw = dict(raw.get("logging", {}))
+                logging_raw[key.removeprefix("logging.")] = value
+                raw["logging"] = logging_raw
             else:
                 raw[key] = value
         return type(model).model_validate(raw)

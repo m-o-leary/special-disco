@@ -10,7 +10,7 @@ import pytest
 
 @pytest.mark.skipif(
     os.getenv("PERF") != "1",
-    reason="Set PERF=1 to run performance measurements",
+    reason="Set PERF=1 to run CLI startup measurements",
 )
 def test_cli_startup_time() -> None:
     start = time.perf_counter()

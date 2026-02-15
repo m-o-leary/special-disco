@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -213,6 +214,7 @@ def parse_pdf(
     docling_generate_picture_images: bool | None = DOCLING_GEN_PIC_OPT,
 ) -> None:
     """Parse a PDF into markdown using a configured parser."""
+    os.environ.setdefault("OBJC_PRINT_DUPLICATE_CLASSES", "NO")
 
     registry = ParserRegistry()
     registry.register_adapter(
@@ -250,8 +252,10 @@ def parse_pdf(
         raw_config = {}
     if "parser" not in raw_config:
         raw_config["parser"] = {"kind": "docling"}
-    if "input_path" not in raw_config and input_path is None:
-        raise ValueError("input_path is required (use --input or config)")
+    if "input_path" not in raw_config:
+        if input_path is None:
+            raise ValueError("input_path is required (use --input or config)")
+        raw_config["input_path"] = input_path
 
     config_model = cast(
         _CliConfigProtocol, TypeAdapter(cli_model).validate_python(raw_config)

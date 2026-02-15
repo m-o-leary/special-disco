@@ -18,11 +18,9 @@ class PdfParserConfig:
 
 @runtime_checkable
 class PdfParser(Protocol):
-    def parse(self, file_path: Path) -> str:
-        ...
+    def parse(self, file_path: Path) -> str: ...
 
 
 @runtime_checkable
 class PdfParserFactory(Protocol):
-    def create(self, config: PdfParserConfig) -> PdfParser:
-        ...
+    def create(self, config: PdfParserConfig) -> PdfParser: ...

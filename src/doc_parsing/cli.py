@@ -265,9 +265,7 @@ def parse_pdf(
     if docling_images_scale is not None:
         docling_overrides["images_scale"] = docling_images_scale
     if docling_generate_picture_images is not None:
-        docling_overrides["generate_picture_images"] = (
-            docling_generate_picture_images
-        )
+        docling_overrides["generate_picture_images"] = docling_generate_picture_images
 
     options_overrides = _parse_options(options)
     parser_overrides: dict[str, Any] = {}

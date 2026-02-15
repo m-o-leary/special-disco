@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib
 import json
-import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -214,8 +213,6 @@ def parse_pdf(
     docling_generate_picture_images: bool | None = DOCLING_GEN_PIC_OPT,
 ) -> None:
     """Parse a PDF into markdown using a configured parser."""
-    os.environ.setdefault("OBJC_PRINT_DUPLICATE_CLASSES", "NO")
-
     registry = ParserRegistry()
     registry.register_adapter(
         AdapterRegistration(

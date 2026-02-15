@@ -1,3 +1,4 @@
+from .config_resolver import ConfigResolver
 from .use_cases import (
     ParsePdfToMarkdown,
     ParsePdfToMarkdownInput,
@@ -5,6 +6,7 @@ from .use_cases import (
 )
 
 __all__ = [
+    "ConfigResolver",
     "ParsePdfToMarkdown",
     "ParsePdfToMarkdownInput",
     "ParsePdfToMarkdownResult",

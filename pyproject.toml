@@ -17,6 +17,10 @@ dependencies = [
 [project.scripts]
 doc-parse = "doc_parsing.cli:app"
 
+[project.entry-points."doc_parsing.adapters"]
+docling = "doc_parsing.infrastructure.parsers.docling_adapter:adapter"
+mock = "doc_parsing.infrastructure.parsers.mock_adapter:adapter"
+
 [build-system]
 requires = ["hatchling>=1.25.0"]
 build-backend = "hatchling.build"

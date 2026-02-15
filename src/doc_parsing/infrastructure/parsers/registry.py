@@ -1,22 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
 
 from pydantic import BaseModel
 
 from doc_parsing.domain import PdfParser, PdfParserConfig, PdfParserFactory
 
-
-@dataclass(frozen=True, slots=True)
-class AdapterRegistration:
-    name: str
-    config_model: type[BaseModel]
-    factory: PdfParserFactory
-
-    def __post_init__(self) -> None:
-        if not self.name.strip():
-            raise ValueError("adapter name cannot be empty")
+from .entrypoints import load_entrypoints
+from .registration import AdapterRegistration
 
 
 class ParserRegistry(PdfParserFactory):
@@ -48,3 +39,10 @@ class ParserRegistry(PdfParserFactory):
 
     def config_models(self) -> Mapping[str, type[BaseModel]]:
         return {name: adapter.config_model for name, adapter in self._adapters.items()}
+
+    def register_many(self, registrations: list[AdapterRegistration]) -> None:
+        for registration in registrations:
+            self.register_adapter(registration)
+
+    def load_from_entrypoints(self) -> None:
+        self.register_many(load_entrypoints())

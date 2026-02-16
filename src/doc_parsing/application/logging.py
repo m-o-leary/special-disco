@@ -61,7 +61,25 @@ def configure_logging(config: LoggingConfig) -> None:
     for handler in handlers:
         handler.setFormatter(formatter)
 
-    logging.basicConfig(level=config.level, handlers=handlers, force=True)
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.setLevel(logging.CRITICAL)
+
+    for logger in logging.Logger.manager.loggerDict.values():
+        if not isinstance(logger, logging.Logger):
+            continue
+        if logger.name.startswith("doc_parsing"):
+            continue
+        logger.handlers.clear()
+        logger.propagate = True
+        logger.setLevel(logging.NOTSET)
+
+    doc_logger = logging.getLogger("doc_parsing")
+    doc_logger.handlers.clear()
+    for handler in handlers:
+        doc_logger.addHandler(handler)
+    doc_logger.setLevel(config.level)
+    doc_logger.propagate = False
 
 
 def get_logger(name: str, **context: Any) -> logging.LoggerAdapter:

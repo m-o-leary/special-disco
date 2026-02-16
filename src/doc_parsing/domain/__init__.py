@@ -11,8 +11,18 @@ from .entities import (
     ParsingTask,
     TableBlock,
     TextBlock,
+    TriageDecision,
+    TriageMetadata,
+    TriageResult,
+    TriageRoute,
 )
-from .ports import PdfParser, PdfParserConfig, PdfParserFactory
+from .ports import (
+    PdfInspector,
+    PdfParser,
+    PdfParserConfig,
+    PdfParserFactory,
+    TriagePolicy,
+)
 from .value_objects import (
     BoundingBox,
     DocumentId,
@@ -33,6 +43,7 @@ __all__ = [
     "DocumentSource",
     "ImageBlock",
     "Page",
+    "PdfInspector",
     "PdfParser",
     "PdfParserConfig",
     "PdfParserFactory",
@@ -44,4 +55,9 @@ __all__ = [
     "TableBlock",
     "TaskId",
     "TextBlock",
+    "TriageDecision",
+    "TriageMetadata",
+    "TriagePolicy",
+    "TriageResult",
+    "TriageRoute",
 ]

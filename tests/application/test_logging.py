@@ -33,12 +33,16 @@ class FakeFactory(PdfParserFactory):
 def test_configure_logging_json(caplog: pytest.LogCaptureFixture) -> None:
     configure_logging(LoggingConfig(level="INFO", format="json"))
     root = logging.getLogger()
+    doc_logger = logging.getLogger("doc_parsing")
 
-    assert root.level == logging.INFO
-    assert root.handlers
+    assert root.level == logging.CRITICAL
+    assert not root.handlers
+    assert doc_logger.handlers
+    assert doc_logger.level == logging.INFO
+    assert doc_logger.propagate is False
     assert any(
         handler.formatter.__class__.__name__ == "_JsonFormatter"
-        for handler in root.handlers
+        for handler in doc_logger.handlers
     )
 
 
@@ -58,8 +62,13 @@ def test_use_case_logs_context(
         options=ParseOptions(),
     )
 
-    with caplog.at_level(logging.INFO):
+    doc_logger = logging.getLogger("doc_parsing")
+    doc_logger.addHandler(caplog.handler)
+    caplog.set_level(logging.INFO, logger="doc_parsing")
+    try:
         use_case.execute(data)
+    finally:
+        doc_logger.removeHandler(caplog.handler)
 
     assert any(
         getattr(record, "task_id", None) == "task-1" for record in caplog.records

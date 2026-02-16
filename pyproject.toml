@@ -7,7 +7,9 @@ requires-python = ">=3.13"
 dependencies = [
     "docling[vlm]>=2.72.0",
     "fsspec[http,s3]>=2025.10.0",
+    "langdetect>=1.0.9",
     "pydantic>=2.12.5",
+    "pypdf>=6.7.0",
     "pyyaml>=6.0.3",
     "rich>=14.3.2",
     "typer-slim>=0.21.1",
@@ -20,6 +22,9 @@ doc-parse = "doc_parsing.cli:app"
 [project.entry-points."doc_parsing.adapters"]
 docling = "doc_parsing.infrastructure.parsers.docling_adapter:adapter"
 mock = "doc_parsing.infrastructure.parsers.mock_adapter:adapter"
+
+[project.entry-points."doc_parsing.triage_policies"]
+rules = "doc_parsing.infrastructure.triage.rules_policy:policy"
 
 [build-system]
 requires = ["hatchling>=1.25.0"]

@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
+from .entities import TriageDecision, TriageMetadata
+
 
 @dataclass(frozen=True, slots=True)
 class PdfParserConfig:
@@ -24,3 +26,13 @@ class PdfParser(Protocol):
 @runtime_checkable
 class PdfParserFactory(Protocol):
     def create(self, config: PdfParserConfig) -> PdfParser: ...
+
+
+@runtime_checkable
+class PdfInspector(Protocol):
+    def inspect(self, file_path: Path) -> TriageMetadata: ...
+
+
+@runtime_checkable
+class TriagePolicy(Protocol):
+    def decide(self, metadata: TriageMetadata) -> TriageDecision | None: ...

@@ -33,6 +33,11 @@ class DocumentContentKind(StrEnum):
     MARKDOWN = "markdown"
 
 
+class TriageRoute(StrEnum):
+    PARSE = "parse"
+    DLQ = "dlq"
+
+
 ALLOWED_STATUS_TRANSITIONS: dict[ParseStatus, frozenset[ParseStatus]] = {
     ParseStatus.RECEIVED: frozenset({ParseStatus.RUNNING, ParseStatus.CANCELLED}),
     ParseStatus.RUNNING: frozenset(
@@ -246,3 +251,49 @@ class ParsingTask:
 
     def _mark_completed(self) -> None:
         self.completed_at = datetime.now(tz=UTC)
+
+
+@dataclass(slots=True)
+class TriageMetadata:
+    page_count: int
+    language: str | None
+    scanned: bool
+    image_only_pages: int
+    image_only_page_ratio: float
+
+    def __post_init__(self) -> None:
+        if self.page_count < 0:
+            raise ValueError("page_count must be >= 0")
+        if self.image_only_pages < 0:
+            raise ValueError("image_only_pages must be >= 0")
+        if self.image_only_pages > self.page_count:
+            raise ValueError("image_only_pages cannot exceed page_count")
+        if not (0.0 <= self.image_only_page_ratio <= 1.0):
+            raise ValueError("image_only_page_ratio must be between 0.0 and 1.0")
+        if self.language is not None and not self.language.strip():
+            raise ValueError("language cannot be blank")
+
+
+@dataclass(slots=True)
+class TriageDecision:
+    route: TriageRoute
+    parser: dict[str, object] | None
+    reason: str | None
+    policy: str
+    rule: str | None
+
+    def __post_init__(self) -> None:
+        _require_non_blank(self.policy, field_name="policy")
+        if self.route == TriageRoute.PARSE:
+            if not self.parser:
+                raise ValueError("parser config is required for parse decisions")
+            if "kind" not in self.parser:
+                raise ValueError("parser config must include kind")
+        if self.route == TriageRoute.DLQ:
+            _require_non_blank(self.reason or "", field_name="reason")
+
+
+@dataclass(slots=True)
+class TriageResult:
+    metadata: TriageMetadata
+    decision: TriageDecision

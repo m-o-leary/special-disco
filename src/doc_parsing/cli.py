@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import pdb
 import sys
 import traceback
@@ -14,12 +15,19 @@ from rich.panel import Panel
 from doc_parsing.application import ParsePdfToMarkdown, ParsePdfToMarkdownInput
 from doc_parsing.application.config_resolver import ConfigResolver
 from doc_parsing.application.logging import LoggingConfig, configure_logging
+from doc_parsing.application.triage_config_resolver import TriageConfigResolver
+from doc_parsing.application.use_cases import (
+    TriagePdf,
+    TriagePdfInput,
+    TriagePolicyChain,
+)
 from doc_parsing.domain import (
     DocumentId,
     PdfParserConfig,
     TaskId,
 )
 from doc_parsing.infrastructure import ParserRegistry
+from doc_parsing.infrastructure.triage import PypdfInspector, TriagePolicyRegistry
 
 app = typer.Typer(add_completion=False)
 console = Console()
@@ -154,6 +162,110 @@ def parse_pdf(
         )
     else:
         console.print(markdown)
+
+
+@app.command("triage")
+def triage_pdf(
+    config_path: str | None = CONFIG_OPT,
+    input_path: Path | None = INPUT_OPT,
+    output_path: Path | None = OUTPUT_OPT,
+    task_id: str | None = TASK_ID_OPT,
+    document_id: str | None = DOCUMENT_ID_OPT,
+    set_values: list[str] | None = SET_OPT,
+    log_level: str | None = LOG_LEVEL_OPT,
+    log_format: str | None = LOG_FORMAT_OPT,
+    log_file: Path | None = LOG_FILE_OPT,
+    pdb_on_error: bool = PDB_OPT,
+) -> None:
+    """Inspect a PDF and return triage metadata + decision as JSON."""
+    registry = TriagePolicyRegistry()
+    registry.load_from_entrypoints()
+
+    resolver = TriageConfigResolver(registry)
+    raw_config = _load_yaml_config(config_path)
+
+    if raw_config is None:
+        raw_config = {}
+    if "triage" not in raw_config:
+        raise ValueError("triage must be specified in raw config")
+    if "input_path" not in raw_config:
+        if input_path is None:
+            raise ValueError("input_path is required (use --input or config)")
+        raw_config["input_path"] = input_path
+
+    config_model = resolver.parse(raw_config)
+    logging_overrides: dict[str, Any] = {}
+    if log_level is not None:
+        logging_overrides["level"] = log_level
+    if log_format is not None:
+        logging_overrides["format"] = log_format
+    if log_file is not None:
+        logging_overrides["file"] = log_file
+    updated_config = resolver.apply_base_overrides(
+        config_model,
+        input_path=input_path,
+        output_path=output_path,
+        task_id=task_id,
+        document_id=document_id,
+        logging_overrides=logging_overrides or None,
+    )
+    if set_values:
+        updated_config = resolver.apply_overrides(
+            updated_config,
+            overrides=set_values,
+        )
+
+    config_logging = cast(Any, updated_config).logging
+    configure_logging(LoggingConfig.model_validate(config_logging))
+
+    inspection_config = cast(Any, updated_config).inspection
+    inspector = PypdfInspector(inspection_config)
+    policy_configs = cast(Any, updated_config).triage.policies
+    policies = [registry.create(policy) for policy in policy_configs]
+    policy_chain = TriagePolicyChain(policies)
+    use_case = TriagePdf(inspector, policy_chain)
+
+    try:
+        result = use_case.execute(
+            TriagePdfInput(
+                file_path=cast(Any, updated_config).input_path,
+                task_id=TaskId(cast(Any, updated_config).task_id),
+                document_id=DocumentId(cast(Any, updated_config).document_id),
+            )
+        )
+    except Exception as exc:
+        console.print(Panel(str(exc), title="Triage Failed", style="red"))
+        if pdb_on_error:
+            traceback.print_exc()
+            pdb.post_mortem(exc.__traceback__)
+        raise typer.Exit(code=1) from exc
+
+    payload = _triage_payload(result.result)
+    json_payload = json.dumps(payload, indent=2)
+
+    output_path = cast(Any, updated_config).output_path
+    if output_path is not None:
+        output_path.write_text(json_payload)
+    console.print(json_payload, markup=False, soft_wrap=True)
+
+
+def _triage_payload(result: Any) -> dict[str, Any]:
+    return {
+        "metadata": {
+            "page_count": result.metadata.page_count,
+            "language": result.metadata.language,
+            "scanned": result.metadata.scanned,
+            "image_only_pages": result.metadata.image_only_pages,
+            "image_only_page_ratio": result.metadata.image_only_page_ratio,
+        },
+        "decision": {
+            "route": result.decision.route.value,
+            "parser": result.decision.parser,
+            "reason": result.decision.reason,
+            "policy": result.decision.policy,
+            "rule": result.decision.rule,
+        },
+    }
 
 
 if __name__ == "__main__":

@@ -1,0 +1,36 @@
+input_path: /Users/martinoleary/Downloads/sample_regulation.pdf
+
+inspection:
+  kind: pypdf
+  scanned_page_ratio_threshold: 0.7
+  min_text_chars: 20
+  language_sample_pages: 5
+  language_min_chars: 200
+
+triage:
+  policies:
+    - kind: rules
+      name: "rules-main"
+      rules:
+        - name: "small-en"
+          when:
+            min_pages: 1
+            max_pages: 50
+            languages: ["en"]
+            scanned: false
+          action:
+            route: parse
+            hint: "default"
+        - name: "scanned"
+          when:
+            scanned: true
+          action:
+            route: dlq
+            reason: "scanned_pdf"
+      default:
+        route: dlq
+        reason: "no_match"
+
+logging:
+  level: INFO
+  format: json

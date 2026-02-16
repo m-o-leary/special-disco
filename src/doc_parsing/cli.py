@@ -260,10 +260,10 @@ def _triage_payload(result: Any) -> dict[str, Any]:
         },
         "decision": {
             "route": result.decision.route.value,
-            "parser": result.decision.parser,
             "reason": result.decision.reason,
             "policy": result.decision.policy,
             "rule": result.decision.rule,
+            "hint": result.decision.hint,
         },
     }
 

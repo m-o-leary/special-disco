@@ -47,10 +47,10 @@ def test_triage_pdf_returns_decision(tmp_path: Path) -> None:
     )
     decision = TriageDecision(
         route=TriageRoute.PARSE,
-        parser={"kind": "docling"},
         reason=None,
         policy="fake",
         rule="rule-1",
+        hint="default",
     )
 
     use_case = TriagePdf(FakeInspector(metadata), FakePolicy(decision))

@@ -41,19 +41,16 @@ class RuleAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     route: Literal["parse", "dlq"]
-    parser: dict[str, object] | None = None
     reason: str | None = None
+    hint: str | None = None
 
     @model_validator(mode="after")
     def _validate_route(self) -> RuleAction:
-        if self.route == "parse":
-            if not self.parser:
-                raise ValueError("parser is required when route=parse")
-            if "kind" not in self.parser:
-                raise ValueError("parser must include kind")
         if self.route == "dlq":
             if self.reason is None or not self.reason.strip():
                 raise ValueError("reason is required when route=dlq")
+        if self.hint is not None and not self.hint.strip():
+            raise ValueError("hint cannot be blank")
         return self
 
 
@@ -132,10 +129,10 @@ def _decision_from_action(
     route = TriageRoute.PARSE if action.route == "parse" else TriageRoute.DLQ
     return TriageDecision(
         route=route,
-        parser=action.parser,
         reason=action.reason,
         policy=policy,
         rule=rule,
+        hint=action.hint,
     )
 
 

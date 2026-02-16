@@ -141,10 +141,10 @@ class TriagePdf:
         if decision is None:
             decision = TriageDecision(
                 route=TriageRoute.DLQ,
-                parser=None,
                 reason="no_policy_match",
                 policy="default",
                 rule=None,
+                hint=None,
             )
         logger.info(
             "triage.complete",

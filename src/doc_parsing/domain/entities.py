@@ -277,20 +277,17 @@ class TriageMetadata:
 @dataclass(slots=True)
 class TriageDecision:
     route: TriageRoute
-    parser: dict[str, object] | None
     reason: str | None
     policy: str
     rule: str | None
+    hint: str | None = None
 
     def __post_init__(self) -> None:
         _require_non_blank(self.policy, field_name="policy")
-        if self.route == TriageRoute.PARSE:
-            if not self.parser:
-                raise ValueError("parser config is required for parse decisions")
-            if "kind" not in self.parser:
-                raise ValueError("parser config must include kind")
         if self.route == TriageRoute.DLQ:
             _require_non_blank(self.reason or "", field_name="reason")
+        if self.hint is not None and not self.hint.strip():
+            raise ValueError("hint cannot be blank")
 
 
 @dataclass(slots=True)

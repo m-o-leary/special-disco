@@ -53,8 +53,7 @@ triage:
             scanned: false
           action:
             route: parse
-            parser:
-              kind: docling
+            hint: default
 """
     )
 
@@ -68,3 +67,4 @@ triage:
     assert payload["metadata"]["scanned"] is False
     assert payload["decision"]["route"] == "parse"
     assert payload["decision"]["policy"] == "rules"
+    assert payload["decision"]["hint"] == "default"

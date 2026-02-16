@@ -19,7 +19,7 @@ def test_rules_policy_matches_rule() -> None:
                 when=RuleWhen(min_pages=1, max_pages=10, languages=["en"]),
                 action=RuleAction(
                     route="parse",
-                    parser={"kind": "docling", "picture_description": False},
+                    hint="default",
                 ),
             )
         ],
@@ -51,7 +51,7 @@ def test_rules_policy_default_used_when_no_match() -> None:
                 when=RuleWhen(languages=["en"]),
                 action=RuleAction(
                     route="parse",
-                    parser={"kind": "docling"},
+                    hint="default",
                 ),
             )
         ],
